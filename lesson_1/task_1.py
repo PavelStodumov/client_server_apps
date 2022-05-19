@@ -18,5 +18,3 @@ u_word_list = [
 
 check_type(word_list)
 check_type(u_word_list)
-
-print(word_list == u_word_list)
