@@ -39,7 +39,6 @@ def main():
         client, addr = stream.accept()
         try:
             message_from_client = get_message(client)
-            # print(message_from_client)
             response = response_message(message_from_client)
             send_message(client, response)
             client.close()
