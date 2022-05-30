@@ -4,3 +4,6 @@
 2022-05-30 14:39:54,132 INFO       client.py            Клиент запущен с ip 127.0.0.1, port 7777
 2022-05-30 14:39:54,132 INFO       client.py            Отправлено сообщение на сервер {'action': 'presence', 'time': '30.05.2022 14:39:54', 'user': {'account_name': 'guest'}}
 2022-05-30 14:39:54,186 INFO       client.py            Получен ответ от сервера: {'response': '200', 'status': 'ok'}
+2022-05-30 15:00:22,416 INFO       client.py            Клиент запущен с ip 127.0.0.1, port 7777
+2022-05-30 15:00:22,416 INFO       client.py            Отправлено сообщение на сервер {'action': 'presence', 'time': '30.05.2022 15:00:22', 'user': {'account_name': 'guest'}}
+2022-05-30 15:00:22,430 INFO       client.py            Получен ответ от сервера: {'response': '200', 'status': 'ok'}

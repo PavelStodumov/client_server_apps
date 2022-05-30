@@ -7,8 +7,8 @@ log = logging.getLogger('app.server')
 
 # file_handler = logging.FileHandler('logs/server.log', encoding='utf-8')
 file_handler = TimedRotatingFileHandler('logs/server.log', 
-                                        when='m', 
-                                        interval=5, 
+                                        when='h', 
+                                        interval=24, 
                                         backupCount=2,  
                                         encoding='utf-8')
 
