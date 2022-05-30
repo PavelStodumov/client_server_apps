@@ -1,11 +1,13 @@
-import sys
+import sys, logging, logs.server_log_config
 from socket import *
-from urllib import response
 from common.variables import *
 from common.utils import *
 
+log = logging.getLogger('app.server')
+
 
 def response_message(message):
+    log.info(f'Принято сообщение: {message}')
     if message['action'] == PRESENCE and message['user']['account_name'] == 'guest':
         return {
             RESPONSE: '200',
@@ -24,7 +26,7 @@ def main():
         if not 1024 < port < 65535:
             raise ValueError
     except:
-        print('Номер порта должен быть числом в пределах от 1024 до 65535.')
+        log.warning('Номер порта должен быть числом в пределах от 1024 до 65535.')
         sys.exit(1)
     ip = sys.argv[sys.argv.index('-a') + 1] if '-a' in sys.argv else DEFAULT_IP
 
@@ -32,6 +34,7 @@ def main():
     stream.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     stream.bind((ip, port))
     stream.listen(MAX_CONNECTIONS)
+    log.info(f'Запущен сервер: ip {ip}, port {port}')
 
 
 
@@ -43,7 +46,7 @@ def main():
             send_message(client, response)
             client.close()
         except:
-            print('Принято некорректное сообщение от клиента')
+            log.warning('Принято некорректное сообщение от клиента')
             client.close()
 
 if __name__ == '__main__':

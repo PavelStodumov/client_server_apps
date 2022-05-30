@@ -1,4 +1,4 @@
-import json
+import json, logging, logs.client_log_config, logs.server_log_config
 from .variables import ENCODING, MAX_LENGHT_MESSAGE
 
 
