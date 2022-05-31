@@ -3,35 +3,6 @@ import traceback
 import logging
 
 
-# l = logging.getLogger('test')
-# l.setLevel(logging.DEBUG)
-# log_hand = logging.StreamHandler()
-# log_form = logging.Formatter('%(asctime)s %(levelname)-9s %(filename)-15s %(message)s')
-# log_hand.setFormatter(log_form)
-# log_hand.setLevel(logging.DEBUG)
-# l.addHandler(log_hand)
-
-# def log(loger):
-#     def wrapper(loger):
-#         names_funcions = []
-#         for i in traceback.extract_stack()[:-1]:
-#             names_funcions.append(list(i)[-1])
-#         f = func()
-#         loger.info(f'{func} была вызвана {names_funcions}')
-#     return wrapper
-
-# def loger(loger):
-#     def deco(func):
-#         def wrapper(*args, **kwargs):
-#             names_funcions = []        
-#             for i in traceback.extract_stack()[:-1]:
-#                 names_funcions.append(list(i)[-1])
-#             loger.info(f'запуск функции {names_funcions}')
-#             f = func(*args, **kwargs)
-#             return f
-#         return wrapper
-#     return deco
-
 def log(func):
     def wrapper(*args, **kwargs):
         log_name = 'app.server' if sys.argv[0].endswith('server.py') else 'app.client'
