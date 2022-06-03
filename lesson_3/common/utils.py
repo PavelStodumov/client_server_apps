@@ -1,7 +1,9 @@
-import json, logging, logs.client_log_config, logs.server_log_config
+import json
 from .variables import ENCODING, MAX_LENGHT_MESSAGE
+from logs.decorators import log
 
 
+@log
 def send_message(socket, message):
     '''
     на вход передаётся сокет и сообщение в виде словаря
@@ -13,6 +15,7 @@ def send_message(socket, message):
     message = json.dumps(message).encode(ENCODING)
     socket.send(message)
 
+@log
 def get_message(client):
     '''
     функция принимает и декодирует сообщение
