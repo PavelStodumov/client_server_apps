@@ -33,15 +33,6 @@ def write_clients(requests, w_clients, all_clients):
     for sock in w_clients:
         for value in requests.values():
             sock.send(f'{value}'.encode(ENCODING))
-        
-        
-        # try:
-        #     resp = f'Клиент написали {requests[sock]}'.encode('utf-8')
-        #     sock.send(resp)
-        # except:
-        #     print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился при ответе')
-        #     sock.close()
-        #     all_clients.remove(sock)
 
 
 def main():
