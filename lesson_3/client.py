@@ -1,3 +1,4 @@
+from ast import While
 import sys, time, socket, logging, logs.client_log_config
 from common.variables import *
 from common.utils import send_message, get_message
@@ -23,15 +24,26 @@ def main():
         sys.exit(1)
     ip = sys.argv[sys.argv.index('-a') + 1] if '-a' in sys.argv else DEFAULT_IP
 
-    stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    log.info(f'Клиент запущен с ip {ip}, port {port}')
-    stream.connect((ip, port))
-    message_to_server = create_message()
-    send_message(stream, message_to_server)
-    log.info(f'Отправлено сообщение на сервер {message_to_server}')
-    response = get_message(stream)
-    log.info(f'Получен ответ от сервера: {response}')
-    print(response)
+    if 'send' not in sys.argv: # client-listener
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as stream:
+            log.info(f'Клиент запущен с ip {ip}, port {port}')
+            stream.connect((ip, port))
+            while True:
+                resp = stream.recv(MAX_LENGHT_MESSAGE).decode(ENCODING)
+                print(resp)
+                if resp == 'exit':
+                    break
+
+    else: #client-sender
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as stream:
+            log.info(f'Клиент запущен с ip {ip}, port {port}')
+            stream.connect((ip, port))
+            while True:
+                message = input('Введите сообщение: ')
+                if message == 'exit':
+                    stream.send(message.encode(ENCODING))
+                    break
+                stream.send(message.encode(ENCODING))
 
 
 if __name__ == '__main__':
