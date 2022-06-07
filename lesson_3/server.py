@@ -40,10 +40,17 @@ def read_clients(r_clients, all_clients):
 
 def write_clients(requests, w_clients, all_clients, d_clients):
     # отправляем сообщение пользователю
+    # перебираем словарь клиентов {сокет: имя}
     for c_socket, c_name in d_clients.items():
+        # если в принятом сообщении имя получателя есть в словаре
+        # и сокет есть в списке принимающих сокетов
         if requests['to_user'] == c_name and c_socket in w_clients:
-        
             send_message(c_socket, requests)
+        # если имя получателя не указано
+        elif not requests['to_user']:
+            # отправим сообщение всем
+            send_message(c_socket, requests)
+        
 
 
 def main():
@@ -75,8 +82,10 @@ def main():
             log.info(f'Получен запрос на соединение от {addr}')
             print(f'Получен запрос на соединение от {addr}')
             clients.append(client)
+            # d_clients[client_name] = client
+            # print(f'Клиенты онлайн: {set(d_clients.keys())}')
             d_clients[client] = client_name
-            print(d_clients)
+            print(f'Клиенты онлайн: {set(d_clients.values())}')
         finally:
             r_clients = []
             w_clients = []
@@ -90,8 +99,6 @@ def main():
             if requests:
                 write_clients(requests, clients, clients, d_clients)
 
-            # if 'exit' in requests.values():
-            #     break
 
 if __name__ == '__main__':
     print('Сервер запущен')
