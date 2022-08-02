@@ -1,3 +1,5 @@
+from email import message
+from pydoc import cli
 import sys, logging, select
 from socket import *
 from common.variables import *
@@ -8,31 +10,47 @@ log = logging.getLogger('app.server')
 
 def response_message(message):
     log.info(f'Принято сообщение: {message}')
-    if message['action'] == PRESENCE and message['user']['account_name'] == 'guest':
+    if message[ACTION] == PRESENCE and message['user']['account_name'] == 'guest':
         return {
             RESPONSE: '200',
             'status': 'ok'
             }
+    elif message[ACTION] == 'message':
+        return message
+    elif message[ACTION] == 'intro':
+        return message
     return {
         RESPONSE: '400',
         'status': 'Bad request'
     }
 
 def read_clients(r_clients, all_clients):
+    # читаем сообщения от клиентов
     resp = {}
     for sock in r_clients:
         try:
-            data = sock.recv(1024).decode('utf-8')
-            resp[sock] = data
+            data = get_message(sock)
+            resp['from_user'] = data[USER][ACCOUNT_NAME]
+            resp['to_user'] = data['to_user']
+            resp['text'] = data['text']
         except:
             print(f'Клиент {sock.fileno()} {sock.getpeername()} отключился')
             all_clients.remove(sock)
     return resp
 
-def write_clients(requests, w_clients, all_clients):
-    for sock in w_clients:
-        for value in requests.values():
-            sock.send(f'{value}'.encode(ENCODING))
+def write_clients(requests, w_clients, all_clients, d_clients):
+    # отправляем сообщение пользователю
+    # перебираем словарь клиентов {сокет: имя}
+    for c_socket, c_name in d_clients.items():
+        # если в принятом сообщении имя получателя есть в словаре
+        # и сокет есть в списке принимающих сокетов
+        if requests['to_user'] == c_name and c_socket in w_clients:
+            send_message(c_socket, requests)
+        # если имя получателя не указано
+        elif not requests['to_user']:
+            # отправим сообщение всем
+            send_message(c_socket, requests)
+        
 
 
 def main():
@@ -53,15 +71,21 @@ def main():
     log.info(f'Запущен сервер: ip {ip}, port {port}')
 
     clients = []
+    d_clients = {}
     while True:
         try:
             client, addr = stream.accept()
+            client_name = get_message(client)[USER][ACCOUNT_NAME]
         except OSError:
             pass
         else:
             log.info(f'Получен запрос на соединение от {addr}')
             print(f'Получен запрос на соединение от {addr}')
             clients.append(client)
+            # d_clients[client_name] = client
+            # print(f'Клиенты онлайн: {set(d_clients.keys())}')
+            d_clients[client] = client_name
+            print(f'Клиенты онлайн: {set(d_clients.values())}')
         finally:
             r_clients = []
             w_clients = []
@@ -73,10 +97,8 @@ def main():
             
 
             if requests:
-                write_clients(requests, clients, clients)
+                write_clients(requests, clients, clients, d_clients)
 
-            if 'exit' in requests.values():
-                break
 
 if __name__ == '__main__':
     print('Сервер запущен')
