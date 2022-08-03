@@ -1,6 +1,6 @@
-from email import message
-from pydoc import cli
-import sys, logging, select
+import sys
+import logging
+import select
 from socket import *
 from common.variables import *
 from common.utils import *
@@ -14,7 +14,7 @@ def response_message(message):
         return {
             RESPONSE: '200',
             'status': 'ok'
-            }
+        }
     elif message[ACTION] == 'message':
         return message
     elif message[ACTION] == 'intro':
@@ -23,6 +23,7 @@ def response_message(message):
         RESPONSE: '400',
         'status': 'Bad request'
     }
+
 
 def read_clients(r_clients, all_clients):
     # читаем сообщения от клиентов
@@ -38,6 +39,7 @@ def read_clients(r_clients, all_clients):
             all_clients.remove(sock)
     return resp
 
+
 def write_clients(requests, w_clients, all_clients, d_clients):
     # отправляем сообщение пользователю
     # перебираем словарь клиентов {сокет: имя}
@@ -50,16 +52,17 @@ def write_clients(requests, w_clients, all_clients, d_clients):
         elif not requests['to_user']:
             # отправим сообщение всем
             send_message(c_socket, requests)
-        
 
 
 def main():
     try:
-        port = int(sys.argv[sys.argv.index('-p') + 1]) if '-p' in sys.argv else DEFAULT_PORT
+        port = int(sys.argv[sys.argv.index('-p') + 1]
+                   ) if '-p' in sys.argv else DEFAULT_PORT
         if not 1024 < port < 65535:
             raise ValueError
     except:
-        log.warning('Номер порта должен быть числом в пределах от 1024 до 65535.')
+        log.warning(
+            'Номер порта должен быть числом в пределах от 1024 до 65535.')
         sys.exit(1)
     ip = sys.argv[sys.argv.index('-a') + 1] if '-a' in sys.argv else ''
 
@@ -94,7 +97,6 @@ def main():
             except:
                 pass
             requests = read_clients(r_clients, clients)
-            
 
             if requests:
                 write_clients(requests, clients, clients, d_clients)
