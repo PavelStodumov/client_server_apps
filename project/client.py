@@ -1,14 +1,15 @@
-from ast import While
-from email import message
-from os import access
-import sys, time, socket, logging, threading
-from tkinter.messagebox import NO
+import sys
+import time
+import socket
+import logging
+import threading
 from common.variables import *
 from common.utils import send_message, get_message
 
 log = logging.getLogger('app.client')
 
-def create_message(account_name='guest',to_user=None , text=None):
+
+def create_message(account_name='guest', to_user=None, text=None):
     '''
     Функция создаёт сообщение. Возвращает словарь.
     '''
@@ -42,40 +43,43 @@ def create_message(account_name='guest',to_user=None , text=None):
         }
 
 # Поток, принимающий сообщения
+
+
 def listen_thr(ip, port, username):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as stream:
-            log.info(f'Клиент запущен с ip {ip}, port {port}')
-            stream.connect((ip, port))
-            # отправляем информацию о клиенте
-            send_message(stream, create_message(account_name=username))
-            while True:
-                resp = get_message(stream)
-                print(resp['text'])
-                if resp['text'] == 'exit':
-                    break
+        log.info(f'Клиент запущен с ip {ip}, port {port}')
+        stream.connect((ip, port))
+        # отправляем информацию о клиенте
+        send_message(stream, create_message(account_name=username))
+        while True:
+            resp = get_message(stream)
+            print(resp['text'])
+            if resp['text'] == 'exit':
+                break
 
 # Поток, отправляющий сообщения
+
+
 def send_thr(ip, port, username):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as stream:
-            log.info(f'Клиент запущен с ip {ip}, port {port}')
-            stream.connect((ip, port))
-            # отправляем информацию о клиенте
-            send_message(stream, create_message(account_name=username))
-            while True:
-      
-                message = input('Введите [имя получателя]: [сообщение]: ')
-                if ':' in message:
-                    to_username = message.split(':')[0].strip()
-                    text = ''.join(message.split(':')[1:]).strip()
-                else:
-                    to_username = None
-                    text = message
-                ready_message = create_message(account_name=username, to_user=to_username, text=text)
-                send_message(stream, ready_message)
+        log.info(f'Клиент запущен с ip {ip}, port {port}')
+        stream.connect((ip, port))
+        # отправляем информацию о клиенте
+        send_message(stream, create_message(account_name=username))
+        while True:
+
+            message = input('Введите [имя получателя]: [сообщение]: ')
+            if ':' in message:
+                to_username = message.split(':')[0].strip()
+                text = ''.join(message.split(':')[1:]).strip()
+            else:
+                to_username = None
+                text = message
+            ready_message = create_message(
+                account_name=username, to_user=to_username, text=text)
+            send_message(stream, ready_message)
 
 
-
-    
 def main():
     '''
     Скрипт клиента запускаестя с необязательными аргументами:
@@ -84,7 +88,8 @@ def main():
         -u, --user имя клиента(по умолчанию [guest])
     '''
     try:
-        port = int(sys.argv[sys.argv.index('-p') + 1]) if '-p' in sys.argv else DEFAULT_PORT
+        port = int(sys.argv[sys.argv.index('-p') + 1]
+                   ) if '-p' in sys.argv else DEFAULT_PORT
         if not 1024 < port < 65535:
             raise ValueError
     except:
@@ -94,7 +99,7 @@ def main():
 
     if '-u' in sys.argv:
         username = sys.argv[sys.argv.index('-u') + 1]
-    elif '--user'in sys.argv:
+    elif '--user' in sys.argv:
         username = sys.argv[sys.argv.index('--user') + 1]
     else:
         username = 'guest'
@@ -104,6 +109,7 @@ def main():
 
     THR_LISTEN.start()
     THR_SEND.start()
+
 
 if __name__ == '__main__':
     main()
