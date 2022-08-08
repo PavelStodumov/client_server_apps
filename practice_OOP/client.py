@@ -9,6 +9,7 @@ import threading
 import logs.config_client_log
 from common.variables import *
 from common.utils import *
+from common.metaclasses import ClientVerifier
 from errors import IncorrectDataRecivedError, ReqFieldMissingError, ServerError
 from decos import log
 
@@ -17,7 +18,7 @@ logger = logging.getLogger('client_dist')
 
 
 # Класс формировки и отправки сообщений на сервер и взаимодействия с пользователем.
-class ClientSender(threading.Thread):
+class ClientSender(threading.Thread, metaclass=ClientVerifier):
     def __init__(self, account_name, sock):
         self.account_name = account_name
         self.sock = sock
@@ -81,7 +82,7 @@ class ClientSender(threading.Thread):
 
 
 # Класс-приёмник сообщений с сервера. Принимает сообщения, выводит в консоль.
-class ClientReader(threading.Thread):
+class ClientReader(threading.Thread, metaclass=ClientVerifier):
     def __init__(self, account_name, sock):
         self.account_name = account_name
         self.sock = sock
