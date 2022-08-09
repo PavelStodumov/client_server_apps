@@ -70,6 +70,7 @@ def main():
     stream.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     stream.bind((ip, port))
     stream.listen(MAX_CONNECTIONS)
+    print('proslushka')
     stream.settimeout(0.2)
     log.info(f'Запущен сервер: ip {ip}, port {port}')
 
@@ -100,7 +101,7 @@ def main():
 
             if requests:
                 write_clients(requests, clients, clients, d_clients)
-
+ 
 
 if __name__ == '__main__':
     print('Сервер запущен')
