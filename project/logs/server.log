@@ -1,4 +1,0 @@
-2022-05-31 20:42:29,432 INFO       server.py            Запущен сервер: ip 127.0.0.1, port 7777
-2022-05-31 20:43:08,565 INFO       decorators.py        Функция get_message вызвана из функции main()
-2022-05-31 20:43:08,565 INFO       server.py            Принято сообщение: {'action': 'presence', 'time': '31.05.2022 20:43:08', 'user': {'account_name': 'guest'}}
-2022-05-31 20:43:08,565 INFO       decorators.py        Функция send_message вызвана из функции main()
