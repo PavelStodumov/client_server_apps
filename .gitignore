@@ -3,3 +3,5 @@ __pycache__
 .gitignore
 .idea
 *.log
+.vscode/settings.json
+*.log.*
