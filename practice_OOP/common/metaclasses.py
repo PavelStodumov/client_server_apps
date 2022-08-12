@@ -64,8 +64,7 @@ class ClientVerifier(type):
         # список не допустимых инструкций
         not_inst = ['accept', 'listen']
         # список необходимых инструкций
-        yes_inst = ['SOCK_STREAM', 'AF_INET']
-
+        yes_inst = ['sock']
         for i in not_inst:
             # Если в списке всех атрибутов и методов присутствует не допустимая инструкция
             # возбуждаем исключение

@@ -1,3 +1,0 @@
-2022-05-30 14:37:02,486 INFO       server.py            Запущен сервер: ip 127.0.0.1, port 7777
-2022-05-30 14:38:45,787 INFO       server.py            Принято сообщение: {'action': 'presence', 'time': '30.05.2022 14:38:45', 'user': {'account_name': 'guest'}}
-2022-05-30 14:39:54,132 INFO       server.py            Принято сообщение: {'action': 'presence', 'time': '30.05.2022 14:39:54', 'user': {'account_name': 'guest'}}
