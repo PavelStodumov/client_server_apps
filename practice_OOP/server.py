@@ -4,7 +4,9 @@ import argparse
 import json
 import logging
 import select
+import threading
 import time
+from unicodedata import name
 import logs.config_server_log
 from errors import IncorrectDataRecivedError
 from common.variables import *
@@ -12,10 +14,17 @@ from common.utils import *
 from common.descriptors import ValidationPort
 from decos import log
 from common.metaclasses import ServerVerifier
+from db.server_db import ServerDataBase
+import tabulate
 
 # Инициализация логирования сервера.
 logger = logging.getLogger('server_dist')
 
+# функция для получения ключа словаря по его значению
+def get_key(d, value):
+    for k, v in d.items():
+        if v == value:
+            return k
 
 # Парсер аргументов командной строки.
 @log
@@ -30,14 +39,18 @@ def arg_parser():
 
 
 # Основной класс сервера
-class Server(metaclass=ServerVerifier):
+class Server(threading.Thread, metaclass=ServerVerifier):
     # Дескрипттор для валидации номера порта
     port = ValidationPort()
     
-    def __init__(self, listen_address, listen_port):
+    def __init__(self, listen_address, listen_port, db):
+
         # Параметры подключения
         self.addr = listen_address
         self.port = listen_port
+
+        # база данных
+        self.db = db
 
         # Список подключённых клиентов.
         self.clients = []
@@ -47,6 +60,9 @@ class Server(metaclass=ServerVerifier):
 
         # Словарь содержащий сопоставленные имена и соответствующие им сокеты.
         self.names = dict()
+
+        # конструктор родителей
+        super().__init__()
 
     def init_socket(self):
         logger.info(
@@ -62,7 +78,7 @@ class Server(metaclass=ServerVerifier):
         self.sock = transport
         self.sock.listen()
 
-    def main_loop(self):
+    def run(self):
         # Инициализация Сокета
         self.init_socket()
 
@@ -94,6 +110,8 @@ class Server(metaclass=ServerVerifier):
                         self.process_client_message(get_message(client_with_message), client_with_message)
                     except:
                         logger.info(f'Клиент {client_with_message.getpeername()} отключился от сервера.')
+                        # удаляем клиента из базы активных
+                        self.db.del_user_from_active(get_key(self.names, client_with_message))
                         self.clients.remove(client_with_message)
 
             # Если есть сообщения, обрабатываем каждое.
@@ -104,6 +122,9 @@ class Server(metaclass=ServerVerifier):
                     logger.info(f'Связь с клиентом с именем '
                                 f'{message[DESTINATION]} была потеряна, '
                                 f' ошибка {e}')
+                    # удаляем клиента из базы активных
+                    self.db.del_user_from_active(message[DESTINATION])
+
                     self.clients.remove(self.names[message[DESTINATION]])
                     del self.names[message[DESTINATION]]
             self.messages.clear()
@@ -136,6 +157,11 @@ class Server(metaclass=ServerVerifier):
             # иначе отправляем ответ и завершаем соединение.
             if message[USER][ACCOUNT_NAME] not in self.names.keys():
                 self.names[message[USER][ACCOUNT_NAME]] = client
+                # записываем пользователя в базу данных
+                client_ip = client.getpeername()[0]
+                client_port = client.getpeername()[1]
+                self.db.add_user(name=message[USER][ACCOUNT_NAME], ip=client_ip, port=client_port)
+
                 send_message(client, RESPONSE_200)
             else:
                 response = RESPONSE_400
@@ -157,9 +183,12 @@ class Server(metaclass=ServerVerifier):
         elif ACTION in message \
                 and message[ACTION] == EXIT \
                 and ACCOUNT_NAME in message:
-            self.clients.remove(self.names[ACCOUNT_NAME])
-            self.names[ACCOUNT_NAME].close()
-            del self.names[ACCOUNT_NAME]
+            # удаляем из базы из активных юзеров
+            self.db.del_user_from_active(message[ACCOUNT_NAME])
+            ####################################################
+            self.clients.remove(self.names[message[ACCOUNT_NAME]])
+            self.names[message[ACCOUNT_NAME]].close()
+            del self.names[message[ACCOUNT_NAME]]
             return
         # Иначе отдаём Bad request
         else:
@@ -168,16 +197,56 @@ class Server(metaclass=ServerVerifier):
             send_message(client, response)
             return
 
+def show_help():
+    print('Доступные команды:')
+    print('all_users - список всех пользователей')
+    print('active_users - список активных пользователей')
+    print('history [user] - история входа пользователей или [пользователя]')
+    print('help - справка о командах')
+    print('exit - остановить сервер')
+
 
 def main():
     # Загрузка параметров командной строки, если нет параметров,
     # то задаём значения по умолчанию.
     listen_address, listen_port = arg_parser()
-
+    # создание экземпляра класса - базы данных
+    db = ServerDataBase()
     # Создание экземпляра класса - сервера.
-    server = Server(listen_address, listen_port)
-    server.main_loop()
+    server = Server(listen_address, listen_port, db)
+
+    server.daemon = True
+    server.start()
+
+   
+
+
+
+    while True:
+        command = input('Введите команду: ')
+        if command == 'exit':
+            if input('Вы уверены, что хотите остановить сервер? y/n :') == 'y':
+                break
+        elif command == 'help':
+            show_help()
+        elif command == 'all_users':
+            headers = ['user', 'last_login_time']
+            print(tabulate.tabulate(server.db.all_users_list(), headers=headers, tablefmt='grid'))
+        elif command == 'active_users':
+            headers = ['user', 'last_login_time', 'ip', 'port']
+            print(tabulate.tabulate(server.db.active_users_list(), headers=headers, tablefmt='grid'))
+        elif command.startswith('history'):
+            headers = ['user', 'last_login_time', 'ip', 'port']
+            try:
+                username = command.split(' ')[1]
+                print(tabulate.tabulate(server.db.history(username), headers=headers, tablefmt='grid'))
+            except IndexError:
+                print(tabulate.tabulate(server.db.history(), headers=headers, tablefmt='grid'))
+        else:
+            print('Неизвестная команда')
+
 
 
 if __name__ == '__main__':
+    show_help()
     main()

@@ -42,7 +42,11 @@ class ServerDataBase:
         
         # путь для хранения файла базы данных
         path_dir = os.path.dirname(os.path.abspath(__file__))
-        self.engine = create_engine(f'sqlite:///{path_dir}/server_data.db', echo=False, pool_recycle=7200)
+        self.engine = create_engine(f'sqlite:///{path_dir}/server_data.db', 
+                                    echo=False, 
+                                    pool_recycle=7200,
+                                    connect_args={'check_same_thread': False}
+                                    )
         self.metadata = MetaData()
 
 
@@ -59,7 +63,7 @@ class ServerDataBase:
             Column('user', ForeignKey('users.id'), unique=True),
             Column('login_time', DateTime),
             Column('ip', String),
-            Column('port', String)
+            Column('port', Integer)
         )
 
 
@@ -69,7 +73,7 @@ class ServerDataBase:
             Column('user', ForeignKey('users.id')),
             Column('login_time', DateTime),
             Column('ip', String),
-            Column('port', String)
+            Column('port', Integer)
         )
 
         # создаём таблицы
@@ -83,6 +87,10 @@ class ServerDataBase:
         # создаём сессию
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
+
+        # очищаем таблицу активных пользователей
+        self.session.query(self.ActiveUser).delete()
+        self.session.commit()
 
     # метод записывает пользователя в базу
     def add_user(self, name, ip, port):
