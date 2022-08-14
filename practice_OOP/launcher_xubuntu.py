@@ -18,7 +18,7 @@ BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 def get_subprocess(file_with_args):
-    sleep(0.2)
+    sleep(0.5)
     file_full_path = f"sh -c '{PYTHON_PATH} {BASE_PATH}/{file_with_args}'"
     args = ['xfce4-terminal',
             '--command',
@@ -39,7 +39,7 @@ while True:
 
         for i in range(3):
             sleep(0.3)
-            process.append(get_subprocess(f"client.py -n test{random.randint(1, 100)}"))
+            process.append(get_subprocess(f"client.py -n test{random.randint(1, 50)}"))
 
     elif action == "x":
         while process:
