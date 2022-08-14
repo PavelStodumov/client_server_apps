@@ -51,6 +51,16 @@ class ClientSender(threading.Thread, metaclass=ClientVerifier):
             logger.critical('Потеряно соединение с сервером.')
             exit(1)
 
+    # функция добавления контакта
+    # def add_contact(self):
+    #     contact = input('Введите имя пользователя: ')
+    #     message_dict = {
+    #         ACTION: 'add_contact',
+    #         SENDER: self.account_name,
+    #         DESTINATION: contact,
+    #         TIME: time.time()
+    #     }
+
     # Функция взаимодействия с пользователем, запрашивает команды, отправляет сообщения
     def run(self):
         self.print_help()

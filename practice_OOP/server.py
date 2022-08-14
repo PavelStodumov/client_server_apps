@@ -190,6 +190,12 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             self.names[message[ACCOUNT_NAME]].close()
             del self.names[message[ACCOUNT_NAME]]
             return
+        # если клиент запрашивает список контактов
+        elif ACTION in message and message[ACTION] == 'add_contact'\
+            and DESTINATION in message\
+            and ACCOUNT_NAME in message:
+
+
         # Иначе отдаём Bad request
         else:
             response = RESPONSE_400
@@ -201,7 +207,7 @@ def show_help():
     print('Доступные команды:')
     print('all_users - список всех пользователей')
     print('active_users - список активных пользователей')
-    print('history [user] - история входа пользователей или [пользователя]')
+    print('login_history [user] - история входа пользователей или [пользователя]')
     print('help - справка о командах')
     print('exit - остановить сервер')
 
@@ -235,7 +241,7 @@ def main():
         elif command == 'active_users':
             headers = ['user', 'last_login_time', 'ip', 'port']
             print(tabulate.tabulate(server.db.active_users_list(), headers=headers, tablefmt='grid'))
-        elif command.startswith('history'):
+        elif command.startswith('login_history'):
             headers = ['user', 'last_login_time', 'ip', 'port']
             try:
                 username = command.split(' ')[1]
