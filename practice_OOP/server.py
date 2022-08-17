@@ -6,7 +6,6 @@ import logging
 import select
 import threading
 import time
-from unicodedata import name
 import logs.config_server_log
 from errors import IncorrectDataRecivedError
 from common.variables import *
@@ -19,6 +18,11 @@ import tabulate
 
 # Инициализация логирования сервера.
 logger = logging.getLogger('server_dist')
+
+# Флаг, что был подключён новый пользователь, нужен чтобы не мучать BD
+# постоянными запросами на обновление
+new_connection = False
+conflag_lock = threading.Lock()
 
 # функция для получения ключа словаря по его значению
 def get_key(d, value):
@@ -71,6 +75,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             f'Если адрес не указан, принимаются соединения с любых адресов.')
         # Готовим сокет
         transport = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        transport.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         transport.bind((self.addr, self.port))
         transport.settimeout(0.5)
 
@@ -111,8 +116,10 @@ class Server(threading.Thread, metaclass=ServerVerifier):
                     except:
                         logger.info(f'Клиент {client_with_message.getpeername()} отключился от сервера.')
                         # удаляем клиента из базы активных
-                        self.db.del_user_from_active(get_key(self.names, client_with_message))
+                        client_name = get_key(self.names, client_with_message)
+                        self.db.del_user_from_active(client_name)
                         self.clients.remove(client_with_message)
+                        del self.names[client_name]
 
             # Если есть сообщения, обрабатываем каждое.
             for message in self.messages:
@@ -149,6 +156,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
     # Обработчик сообщений от клиентов, принимает словарь - сообщение от клиента,
     # проверяет корректность, отправляет словарь-ответ в случае необходимости.
     def process_client_message(self, message, client):
+        global new_connection
         logger.debug(f'Разбор сообщения от клиента : {message}')
         # Если это сообщение о присутствии, принимаем и отвечаем
         if ACTION in message and message[ACTION] == PRESENCE \
@@ -163,6 +171,8 @@ class Server(threading.Thread, metaclass=ServerVerifier):
                 self.db.add_user(name=message[USER][ACCOUNT_NAME], ip=client_ip, port=client_port)
 
                 send_message(client, RESPONSE_200)
+                with conflag_lock:
+                    new_connection = True
             else:
                 response = RESPONSE_400
                 response[ERROR] = 'Имя пользователя уже занято.'
@@ -178,6 +188,7 @@ class Server(threading.Thread, metaclass=ServerVerifier):
                 and SENDER in message \
                 and MESSAGE_TEXT in message:
             self.messages.append(message)
+            self.db.messaging(message[SENDER], message[DESTINATION])
             return
         # Если клиент выходит
         elif ACTION in message \
@@ -190,12 +201,41 @@ class Server(threading.Thread, metaclass=ServerVerifier):
             self.names[message[ACCOUNT_NAME]].close()
             del self.names[message[ACCOUNT_NAME]]
             return
-        # если клиент запрашивает список контактов
+        # если клиент добавляет в список контактов
         elif ACTION in message and message[ACTION] == 'add_contact'\
-            and DESTINATION in message\
-            and ACCOUNT_NAME in message:
-
-
+                    and USER in message\
+                    and ACCOUNT_NAME in message:    
+            self.db.add_contact(message[USER], message[ACCOUNT_NAME])
+            answ = RESPONSE_200
+            answ=[INFO] = f'Пользователь {message[ACCOUNT_NAME]} добавлен в список контактов'
+            send_message(client, answ)
+            return
+        # если клиент удаляет из списка контактов
+        elif ACTION in message and message[ACTION] == 'del_contact'\
+                and USER in message \
+                and ACCOUNT_NAME in message:
+            self.db.del_contact(message[USER], message[ACCOUNT_NAME])
+            answ = RESPONSE_200
+            answ=[INFO] = f'Пользователь {message[ACCOUNT_NAME]} удалён из списка контактов'
+            send_message(client, answ)
+            return
+        # если клиеннт запрашивает список контактов
+        elif ACTION in message and message[ACTION] == 'get_contacts' and USER in message:
+            contacts = self.db.contacts(message[USER])
+            answ = RESPONSE_202
+            answ[INFO] = contacts
+            send_message(client, answ)
+            return
+        # если клиент запрашивает всех пользователей
+        elif ACTION in message and message[ACTION] == 'all_users':
+            all_users = [u[0] for u in self.db.all_users_list()]
+            print(f'all users {all_users}')
+            answ = RESPONSE_202
+            print(answ)
+            answ[INFO] = all_users
+            print(f'answ {answ}')
+            send_message(client, answ)
+            return
         # Иначе отдаём Bad request
         else:
             response = RESPONSE_400

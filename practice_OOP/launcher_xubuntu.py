@@ -39,7 +39,7 @@ while True:
 
         for i in range(3):
             sleep(0.3)
-            process.append(get_subprocess(f"client.py -n test{random.randint(1, 50)}"))
+            process.append(get_subprocess(f"client.py -n test{i}"))
 
     elif action == "x":
         while process:

@@ -21,6 +21,7 @@ ACCOUNT_NAME = 'account_name'
 SENDER = 'from'
 DESTINATION = 'to'
 
+
 # Прочие ключи, используемые в протоколе
 PRESENCE = 'presence'
 RESPONSE = 'response'
@@ -28,10 +29,19 @@ ERROR = 'error'
 MESSAGE = 'message'
 MESSAGE_TEXT = 'mess_text'
 EXIT = 'exit'
+INFO = 'info'
 
 # Словари - ответы:
 # 200
-RESPONSE_200 = {RESPONSE: 200}
+RESPONSE_200 = {
+    RESPONSE: 200,
+    INFO: None
+    }
+# 202
+RESPONSE_202 = {
+    RESPONSE: 202,
+    INFO: None
+    }
 # 400
 RESPONSE_400 = {
             RESPONSE: 400,
